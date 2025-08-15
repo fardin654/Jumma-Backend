@@ -5,12 +5,14 @@ const cors = require('cors');
 const app = express();
 
 // Middleware
-app.use(cors());
 app.use(cors({
-  origin: "*", 
+  origin: "https://jumma-frontend.onrender.com",
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
+
+app.options('*', cors());
+
 app.use(express.json());
 
 // MongoDB Connection
