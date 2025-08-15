@@ -5,7 +5,7 @@ const Payment = require('../models/Payments');
 
 router.get('/member/:memberName', async (req, res) => {
   try {
-    const {name} = req.params.memberName;
+    const name = req.params.memberName;
     const payments = await Payment.find({ member: req.params.memberName })
       .sort({ date: -1 });
         
