@@ -143,6 +143,7 @@ router.post('/:roundId/payments', async (req, res) => {
       flag = false;
 
       round.payments[existingPaymentIndex].amount += amount;
+      round.payments[existingPaymentIndex].date =  new Date(date || Date.now());
 
       // Update status and leftToPay
       round.payments[existingPaymentIndex].status =

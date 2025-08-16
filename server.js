@@ -6,7 +6,8 @@ const app = express();
 
 // Middleware
 const corsOptions = {
-  origin: "https://jumma-frontend.onrender.com",
+  // origin: "https://jumma-frontend.onrender.com",
+  origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
