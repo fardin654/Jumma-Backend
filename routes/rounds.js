@@ -144,7 +144,7 @@ router.post('/:roundId/payments', async (req, res) => {
 
       round.payments[existingPaymentIndex].amount += amount;
       
-      if(amount > 200){
+      if(round.payments[existingPaymentIndex].status == 'pending'){
         round.payments[existingPaymentIndex].date =  new Date(date || Date.now());
       }
 
