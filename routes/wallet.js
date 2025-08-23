@@ -7,7 +7,8 @@ router.get('/', async (req, res) => {
   try {
     const walletData = await Wallet.findOne();
     if (!walletData) {
-      return res.status(404).json({ message: 'Wallet not found' });
+      walletData = new Wallet({ Balance: 0 });
+      await walletData.save();
     }
     res.json({ Balance: walletData.Balance });
   } catch (err) {

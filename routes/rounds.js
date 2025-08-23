@@ -10,6 +10,7 @@ router.post('/', async (req, res) => {
   try {
     const members = await Member.find();
     const lastRound = await Round.findOne().sort({ roundNumber: -1 });
+    const fixedAmount = req.body.fixed.fixedAmount || 400;
     
     // Create payments array with all members
     const payments = await Promise.all(members.map(async (member) => {
@@ -29,16 +30,17 @@ router.post('/', async (req, res) => {
         member: member.name,
         date: lastPaymentDate,
         amount: 0,
-        leftToPay: 400,
+        leftToPay: fixedAmount,
         status: 'pending'
       };
     }));
 
     const round = new Round({
       roundNumber: req.body.roundNumber,
-      date: new Date(), // Set current date as round date
+      date: new Date(), 
       payments: payments,
-      isCompleted: false
+      isCompleted: false,
+      fixedAmount: fixedAmount,
     });
 
     const newRound = await round.save();
@@ -105,7 +107,6 @@ router.patch('/:id/complete', async (req, res) => {
   }
 });
 
-// In your rounds.js routes file
 router.post('/:roundId/payments', async (req, res) => {
   try {
     const { amount, paidBy, date } = req.body;
@@ -130,8 +131,8 @@ router.post('/:roundId/payments', async (req, res) => {
       member: paidBy,
       amount: amount,
       date: date || Date.now(),
-      status: amount >= 400 ? 'paid' : amount > 0 ? 'partial' : 'pending',
-      leftToPay: Math.max(0, 400 - amount)
+      status: amount >= round.fixedAmount ? 'paid' : amount > 0 ? 'partial' : 'pending',
+      leftToPay: Math.max(0, round.fixedAmount - amount)
     };
 
     const member = await Member.findOne({name: paidBy});
@@ -150,7 +151,7 @@ router.post('/:roundId/payments', async (req, res) => {
 
       // Update status and leftToPay
       round.payments[existingPaymentIndex].status =
-        round.payments[existingPaymentIndex].amount >= 400
+        round.payments[existingPaymentIndex].amount >= round.fixedAmount
           ? 'paid'
           : round.payments[existingPaymentIndex].amount > 0
           ? 'partial'
@@ -158,16 +159,16 @@ router.post('/:roundId/payments', async (req, res) => {
 
       round.payments[existingPaymentIndex].leftToPay = Math.max(
         0,
-        400 - round.payments[existingPaymentIndex].amount
+        round.fixedAmount - round.payments[existingPaymentIndex].amount
       );
 
-      balanceDifference = round.payments[existingPaymentIndex].amount - 400;
+      balanceDifference = round.payments[existingPaymentIndex].amount - round.fixedAmount;
       member.balance = balanceDifference;
 
       amountDifference = amount;
     } else {
       round.payments.push(newPayment);
-      member.balance += amount-400;
+      member.balance += amount-round.fixedAmount;
     }
 
 
@@ -202,7 +203,6 @@ router.post('/:roundId/payments', async (req, res) => {
 
 router.post('/:roundId/expenses', async (req, res) => {
   try {
-    console.log("Finally Here..");
     const { description, amount, balanceLeft, date } = req.body;
     const round = await Round.findById(req.params.roundId);
     

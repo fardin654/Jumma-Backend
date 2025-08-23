@@ -70,6 +70,10 @@ const RoundSchema = new mongoose.Schema({
   Balance: {
     type: Number,
     default: 0
+  },
+  fixedAmount: {
+    type: Number,
+    default: 400
   }
 });
 
