@@ -6,9 +6,8 @@ const app = express();
 
 // Middleware
 const corsOptions = {
-  // origin: "https://jumma-frontend.onrender.com",
   origin: "*",
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
 };
@@ -32,6 +31,7 @@ app.use('/api/expenses', require('./routes/expenses'));
 app.use('/api/rounds', require('./routes/rounds'));
 app.use('/api/wallets', require('./routes/wallet'));
 app.use('/api/payments', require('./routes/payments'));
+app.use('/api/contacts', require('./routes/contacts'));
 
 // Start Server
 const PORT = process.env.PORT || 5000;
