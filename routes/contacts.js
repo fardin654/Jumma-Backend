@@ -5,7 +5,7 @@ const Contacts = require('../models/Contacts');
 // Get all contacts
 router.get('/', async (req, res) => {
   try {
-    const members = await Contacts.find();
+    const members = await Contacts.find({AccessCode: req.query.AccessCode});
     res.json(members);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -17,7 +17,8 @@ router.post('/', async (req, res) => {
   const member = new Contacts({
     name: req.body.name,
     contact: req.body.contact || '0',
-    description: req.body.description || ''
+    description: req.body.description || '',
+    AccessCode: req.body.AccessCode
   });
 
   try {
@@ -44,4 +45,16 @@ router.patch('/:id', async (req, res) => {
   }
 });
 
+// Delete Member
+router.delete('/:id', async (req, res) => {
+  try {
+    const member = await Contacts.findByIdAndDelete(req.params.id);
+    if (!member) {
+      return res.status(404).json({ message: 'Contact not found' });
+    }
+    res.json({ message: 'Contact deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 module.exports = router;

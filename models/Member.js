@@ -4,11 +4,14 @@ const MemberSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
-    unique: true
   },
   balance: {
     type: Number,
     default: 0
+  },
+  AccessCode: {
+    type: String,
+    required: true
   },
   createdAt: {
     type: Date,

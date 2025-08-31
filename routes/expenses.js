@@ -9,7 +9,8 @@ router.post('/', async (req, res) => {
     description: req.body.description,
     amount: req.body.amount,
     paidBy: req.body.paidBy,
-    roundId: req.body.roundId
+    roundId: req.body.roundId,
+    AccessCode: req.body.AccessCode
   });
 
   try {
@@ -31,7 +32,7 @@ router.post('/', async (req, res) => {
 // Get all expenses
 router.get('/', async (req, res) => {
   try {
-    const expenses = await Expense.find().populate('paidBy', 'name');
+    const expenses = await Expense.find({AccessCode: req.body.AccessCode}).populate('paidBy', 'name');
     res.json(expenses);
   } catch (err) {
     res.status(500).json({ message: err.message });

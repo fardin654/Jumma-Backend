@@ -6,7 +6,17 @@ const Payment = require('../models/Payments');
 // Get all members
 router.get('/', async (req, res) => {
   try {
-    const members = await Member.find();
+    const members = await Member.find({AccessCode: req.query.AccessCode});
+    res.json(members);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Get specific member
+router.get('/:id', async (req, res) => {
+  try {
+    const members = await Member.find({_id: req.params.id});
     res.json(members);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -17,11 +27,13 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   const member = new Member({
     name: req.body.name,
-    balance: req.body.balance || 0
+    balance: req.body.balance || 0,
+    AccessCode: req.body.AccessCode
   });
 
   try {
     const newMember = await member.save();
+    console.log(newMember);
     res.status(201).json(newMember);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -43,5 +55,19 @@ router.patch('/:id', async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 });
+
+// Delete member
+router.delete('/:id', async (req, res) => {
+  try {
+    const member = await Member.findByIdAndDelete(req.params.id);
+    if (!member) {
+      return res.status(404).json({ message: 'Member not found' });
+    }
+    res.json({ message: 'Member deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 
 module.exports = router;

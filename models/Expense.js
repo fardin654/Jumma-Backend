@@ -17,6 +17,10 @@ const ExpenseSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  AccessCode: {
+    type: String,
+    required: true
+  },
   roundId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Round'

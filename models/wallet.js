@@ -10,6 +10,10 @@ const WalletSchema = new mongoose.Schema({
   lastUpdated: {
     type: Date,
     default: Date.now
+  },
+  AccessCode: {
+    type: String,
+    required: true
   }
 });
 

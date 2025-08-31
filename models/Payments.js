@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const PaymentsSchema = new mongoose.Schema({
   member: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
     required: true
   },
   date: {
@@ -13,8 +13,13 @@ const PaymentsSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  
   round: {
     type:Number,
+    required: true
+  },
+  AccessCode: {
+    type: String,
     required: true
   }
 });

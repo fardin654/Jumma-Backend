@@ -5,42 +5,46 @@ const Member = require('../models/Member');
 const Wallet = require('../models/wallet');
 const Payments = require('../models/Payments');
 
-// Create a new round
+// Create New Round
 router.post('/', async (req, res) => {
   try {
-    const members = await Member.find();
-    const lastRound = await Round.findOne().sort({ roundNumber: -1 });
-    const fixedAmount = req.body.fixed.fixedAmount || 400;
-    
-    // Create payments array with all members
-    const payments = await Promise.all(members.map(async (member) => {
-      // Find the member's last payment date from previous rounds
+    const { AccessCode, fixedAmount = 400, members: memberIds } = req.body;
+
+    // Fetch only the members included in the request
+    const members = await Member.find({ _id: { $in: memberIds }, AccessCode });
+
+    const lastRound = await Round.findOne({ AccessCode }).sort({ roundNumber: -1 });
+    const roundNumber = lastRound ? lastRound.roundNumber + 1 : 1;
+
+    // Create payments array only for selected members
+    const payments = members.map((member) => {
       let lastPaymentDate = new Date();
-      
-      if (lastRound) {
+
+      if (lastRound && lastRound.payments) {
         const memberLastPayment = lastRound.payments.find(
-          p => p.member === member.name
+          (p) => p.member.toString() === member._id.toString()
         );
-        if (memberLastPayment && memberLastPayment.date) {
+        if (memberLastPayment?.date) {
           lastPaymentDate = memberLastPayment.date;
         }
       }
-      
+
       return {
-        member: member.name,
+        member: member._id,
         date: lastPaymentDate,
         amount: 0,
         leftToPay: fixedAmount,
-        status: 'pending'
+        status: 'pending',
       };
-    }));
+    });
 
     const round = new Round({
-      roundNumber: req.body.roundNumber,
-      date: new Date(), 
-      payments: payments,
+      roundNumber,
+      date: new Date(),
+      payments,
       isCompleted: false,
-      fixedAmount: fixedAmount,
+      fixedAmount,
+      AccessCode,
     });
 
     const newRound = await round.save();
@@ -51,10 +55,11 @@ router.post('/', async (req, res) => {
   }
 });
 
+
 // Get all rounds
 router.get('/', async (req, res) => {
   try {
-    const rounds = await Round.find().populate('payments.member', 'name').sort({ date: -1 });;
+    const rounds = await Round.find({AccessCode: req.query.AccessCode}).populate('payments.member', 'name').sort({ date: -1 });;
     res.json(rounds);
   } catch (err) {
     console.error('Error fetching rounds:', err);
@@ -98,7 +103,8 @@ router.patch('/:id/complete', async (req, res) => {
   try {
     const round = await Round.findByIdAndUpdate(
       req.params.id,
-      { isCompleted: true },
+      { isCompleted: true,
+        endDate: new Date() },
       { new: true }
     );
     res.json(round);
@@ -107,6 +113,24 @@ router.patch('/:id/complete', async (req, res) => {
   }
 });
 
+// Delete a round
+router.delete('/:id', async (req, res) => {
+  try {
+    const round = await Round.findByIdAndDelete(req.params.id);
+
+    if (!round) {
+      return res.status(404).json({ message: 'Round not found' });
+    }
+
+    res.json({ message: 'Round deleted successfully', round });
+  } catch (err) {
+    console.error('Error deleting round:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
+// Add New Payment
 router.post('/:roundId/payments', async (req, res) => {
   try {
     const { amount, paidBy, date } = req.body;
@@ -116,16 +140,15 @@ router.post('/:roundId/payments', async (req, res) => {
       return res.status(404).json({ message: 'Round not found' });
     }
 
-    const wallet = await Wallet.findOne();
+    const wallet = await Wallet.findOne({AccessCode: req.body.AccessCode});
     if (!wallet) {
       return res.status(404).json({ message: 'Wallet not found' });
     }
 
     // Check if payment already exists for this member
     const existingPaymentIndex = round.payments.findIndex(
-      p => p.member.toString() === paidBy
+      p => p.member === paidBy
     );
-    console.log("Payment Index", existingPaymentIndex);
 
     const newPayment = {
       member: paidBy,
@@ -135,13 +158,13 @@ router.post('/:roundId/payments', async (req, res) => {
       leftToPay: Math.max(0, round.fixedAmount - amount)
     };
 
-    const member = await Member.findOne({name: paidBy});
+    const member = await Member.findOne({_id: paidBy});
+    if(!member){
+      return res.status(404).json({message: 'Member not found'});
+    }
 
-    let amountDifference = amount;
     let balanceDifference = 0;
-    let flag = true;
     if (existingPaymentIndex >= 0) {
-      flag = false;
 
       round.payments[existingPaymentIndex].amount += amount;
       
@@ -176,7 +199,8 @@ router.post('/:roundId/payments', async (req, res) => {
       member: paidBy,
       date: date || Date.now(),
       amount: amount,
-      round: round.roundNumber || round._id
+      round: round.roundNumber || round._id,
+      AccessCode: req.body.AccessCode
     });
 
     wallet.Balance += amount;
@@ -201,9 +225,10 @@ router.post('/:roundId/payments', async (req, res) => {
   }
 });
 
+// Add Expense
 router.post('/:roundId/expenses', async (req, res) => {
   try {
-    const { description, amount, balanceLeft, date } = req.body;
+    const { description, amount, balanceLeft, date, AccessCode } = req.body;
     const round = await Round.findById(req.params.roundId);
     
     if (!round) {
@@ -214,12 +239,13 @@ router.post('/:roundId/expenses', async (req, res) => {
       description,
       amount,
       balanceLeft,
-      date: date || Date.now()
+      date: date || Date.now(),
+      AccessCode
     };
 
     round.Expenses.push(newExpense);
 
-    const wallet = await Wallet.findOne();
+    const wallet = await Wallet.findOne({AccessCode: AccessCode});
     if (!wallet) {
       return res.status(404).json({ message: 'Wallet not found' });
     }

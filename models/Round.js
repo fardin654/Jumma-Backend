@@ -57,6 +57,9 @@ const RoundSchema = new mongoose.Schema({
     type: Date,
     required: true
   },
+  endDate: {
+    type: Date
+  },
   payments: [PaymentSchema],
   Expenses: [ExpenseSchema],
   isCompleted: {
@@ -74,6 +77,10 @@ const RoundSchema = new mongoose.Schema({
   fixedAmount: {
     type: Number,
     default: 400
+  },
+  AccessCode: {
+    type: String,
+    required: true
   }
 });
 
