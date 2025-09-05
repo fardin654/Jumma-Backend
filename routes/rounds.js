@@ -4,6 +4,7 @@ const Round = require('../models/Round');
 const Member = require('../models/Member');
 const Wallet = require('../models/wallet');
 const Payments = require('../models/Payments');
+const Expense = require('../models/Expense');
 
 // Create New Round
 router.post('/', async (req, res) => {
@@ -133,7 +134,7 @@ router.delete('/:id', async (req, res) => {
 // Add New Payment
 router.post('/:roundId/payments', async (req, res) => {
   try {
-    const { amount, paidBy, date } = req.body;
+    const { amount, paidBy, date, paymentType } = req.body;
     const round = await Round.findById(req.params.roundId);
     
     if (!round) {
@@ -203,8 +204,22 @@ router.post('/:roundId/payments', async (req, res) => {
       AccessCode: req.body.AccessCode
     });
 
-    wallet.Balance += amount;
     round.Balance = round.payments.reduce((sum, payment) => sum + payment.amount, 0);
+
+    if(paymentType == 'expense'){
+      const expense = {
+          description: `Paid by: ${member.name}`,
+          amount: amount,
+          balanceLeft: wallet.Balance,
+          date: date || Date.now(),
+          AccessCode: req.body.AccessCode
+      };
+
+      round.Expenses.push(expense);
+      round.totalExpenses = round.Expenses.reduce((sum, expense) => sum + expense.amount, 0);
+    } else if(paymentType == 'wallet'){
+      wallet.Balance += amount;
+    }
     
     
     const [savedWallet, savedRound, savedPayment, savedMember] = await Promise.all([

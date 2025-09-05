@@ -150,7 +150,7 @@ router.patch('/:id', async (req, res) => {
                     savedWallet.Balance -= request.amount;
 
                     const expense = new Expense({
-                        description: `Paid by : ${member.name}`,
+                        description: `Paid by: ${member.name}`,
                         amount: request.amount,
                         balanceLeft: savedWallet.Balance,
                         date: request.date || Date.now(),
